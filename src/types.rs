@@ -6,10 +6,13 @@ pub struct Types {
     pub types: Vec<String>,
 }
 
-// impl Types{
-pub async fn all() -> Result<Vec<String>, Box<dyn std::error::Error>>{
-    let types: Types = query_builder::build("types").await?;
+pub type Type = Result<Types, reqwest::StatusCode>;
 
-    Ok(types.types)
+pub async fn all() -> Result<Vec<String>, reqwest::StatusCode>{
+    let types: Type = query_builder::build("types").await;
+
+    match types {
+        Ok(t) => Ok(t.types),
+        Err(e) => Err(e),
+    }
 }
-// }
