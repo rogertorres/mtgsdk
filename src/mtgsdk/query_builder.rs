@@ -1,17 +1,15 @@
 use reqwest::StatusCode;
 use serde::de::DeserializeOwned;
 
-pub async fn build<T>(call: &str) -> Result<T, StatusCode> 
+const API_URL: &str = "https://api.magicthegathering.io";
+const API_VER: &str = "v1";
+
+async fn build<T>(url: String) -> Result<T, StatusCode> 
 where T: DeserializeOwned {
-
-    const API_URL: &str = "https://api.magicthegathering.io";
-    const API_VER: &str = "v1";
-
     // // Build the client using the builder pattern
     // let client = reqwest::Client::builder()
     //     .build()?;
 
-    let url = format!("{}/{}/{}", API_URL, API_VER, call);
 
     // // Perform the actual execution of the network request
     // let response = client
@@ -49,28 +47,20 @@ where T: DeserializeOwned {
     }
 }
 
-// pub async fn build_backup<T>(call: &str) -> Result<T, reqwest::Error> 
-// where T: DeserializeOwned {
+pub async fn all<T>(call: &str) -> Result<T, StatusCode> 
+where T: DeserializeOwned {
+    let url = format!("{}/{}/{}", API_URL, API_VER, call);
+    build(url).await
+}
 
-//     const API_URL: &str = "https://api.magicthegathering.io";
-//     const API_VER: &str = "v1";
+pub async fn find<T>(call: &str, id: &str) -> Result<T, StatusCode> 
+where T: DeserializeOwned {
+    let url = format!("{}/{}/{}/{}", API_URL, API_VER, call, id);
+    build(url).await
+}
 
-//     // Build the client using the builder pattern
-//     let client = reqwest::Client::builder()
-//         .build()?;
-
-//     let url = format!("{}/{}/{}", API_URL, API_VER, call);
-
-//     // Perform the actual execution of the network request
-//     let res = client
-//         .get(&url)
-//         .send()
-//         .await?;
-
-//     // Parse the response body as Json in this case
-//     let content: T = res
-//         .json::<T>()
-//         .await?;
-
-//     Ok(content)
-// }
+pub async fn filter<T>(call: &str, params: &str) -> Result<T, StatusCode> 
+where T: DeserializeOwned {
+    let url = format!("{}/{}/{}/{}", API_URL, API_VER, call, params);
+    build(url).await
+}
