@@ -6,17 +6,6 @@ const API_VER: &str = "v1";
 
 async fn build<T>(url: String) -> Result<T, StatusCode> 
 where T: DeserializeOwned {
-    // // Build the client using the builder pattern
-    // let client = reqwest::Client::builder()
-    //     .build()?;
-
-
-    // // Perform the actual execution of the network request
-    // let response = client
-    //     .get(&url)
-    //     .send()
-    //     .await;
-
     let response = reqwest::get(url).await;
 
     match &response {
@@ -40,25 +29,30 @@ where T: DeserializeOwned {
         .json::<T>()
         .await;
 
-    if let Ok(des) = content{
-        Ok(des)
-    } else { 
-        Err(StatusCode::BAD_REQUEST)
+    match content {
+        Ok(s) => Ok(s),
+        Err(e) => {
+            println!("{:?}", e);
+            Err(StatusCode::BAD_REQUEST)
+        }
     }
 }
 
+// Make call without parameters nor filters
 pub async fn all<T>(call: &str) -> Result<T, StatusCode> 
 where T: DeserializeOwned {
     let url = format!("{}/{}/{}", API_URL, API_VER, call);
     build(url).await
 }
 
+// Make call with parameter (:/id)
 pub async fn find<T>(call: &str, id: &str) -> Result<T, StatusCode> 
 where T: DeserializeOwned {
     let url = format!("{}/{}/{}/{}", API_URL, API_VER, call, id);
     build(url).await
 }
 
+// Make call with query filter (?param=value)
 pub async fn filter<T>(call: &str, params: &str) -> Result<T, StatusCode> 
 where T: DeserializeOwned {
     let url = format!("{}/{}/{}/{}", API_URL, API_VER, call, params);

@@ -57,13 +57,95 @@ mod tests {
     #[tokio::test]
     #[ignore]
     async fn filter_name(){ 
-        let sets = sets::filter().name("mirag").all().await;
+        let sets = sets::filter()
+            .name("mirag")
+            .all()
+            .await;
         assert_eq!(sets.unwrap().pop().unwrap().name, "Mirage");
     }
-
+    
     #[tokio::test]
+    #[ignore]
     async fn filter_page(){ 
-        let sets = sets::filter().page(2).page_size(3).all().await;
-        assert_eq!(sets.unwrap().len(), 3);
+        let sets = sets::filter()
+            .page(2)
+            .page_size(13)
+            .all()
+            .await;
+        assert_eq!(sets.unwrap().len(), 13);
+    }
+ 
+    #[tokio::test]
+    #[ignore]
+    async fn get_all_cards(){ 
+        let cards = cards::all().await;
+        assert_eq!(cards.unwrap().get(0).unwrap().name.chars().collect::<Vec<char>>()[0], 'A');
+    }
+ 
+    #[tokio::test]
+    #[ignore]
+    async fn find_card(){ 
+        let cards = cards::find(386616).await;
+        assert_eq!(cards.unwrap().name, "Narset, Enlightened Master");
+    }
+ 
+    #[tokio::test]
+    #[ignore]
+    async fn find_card_no_mana_cost(){ 
+        let cards = cards::find(438608).await;
+        println!("{}",cards.clone().unwrap().name);
+        assert_eq!(cards.unwrap().name, "Ancestral Vision");
+    }
+    
+    #[tokio::test]
+    #[ignore]
+    async fn filter_card(){ 
+        let cards = cards::filter()
+        .name("Karn")
+        .all()
+        .await;
+        // assert!(cards.unwrap().get(0).unwrap().name.contains("Karn"));
+        assert!(cards.unwrap().iter().any(|card| card.name == "Karn Liberated"));
+    }
+    
+    #[tokio::test]
+    #[ignore]
+    async fn filter_card_two(){ 
+        let cards = cards::filter()
+            .page("50")
+            .page_size("50")
+            .all()
+            .await;
+        
+        assert_eq!(cards.unwrap().len(), 50);
+    }
+    
+    #[tokio::test]
+    #[ignore]
+    async fn filter_card_three(){ 
+        let cards = cards::filter()
+            .supertypes("legendary")
+            .types("creature")
+            .colors("red,white")
+            .all()
+            .await;
+        
+        assert!(cards.unwrap().iter().any(|card| card.name == "Breya, Etherium Shaper"));
+    }
+    
+    #[tokio::test]
+    #[ignore]
+    async fn many_pages_stress(){
+        let mut page: u64 = 0;
+        while page < 50{
+            page += 1;
+            let cards = cards::filter()
+                .page(&page.to_string())
+                .page_size("100")
+                .all()
+                .await;
+            
+            assert_eq!(cards.unwrap().len(),100);
+        }
     }
 }

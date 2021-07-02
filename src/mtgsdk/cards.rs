@@ -11,21 +11,23 @@ pub struct Rulings{
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
 pub struct ForeignNames{
-    name: String,
-    text: String,
+    pub name: String,
+    #[serde(default)]
+    pub text: String,
     #[serde(rename = "type")]
-    type_field: String,
-    flavor: Option<String>,
-    image_url: String,
-    language: String,
-    multiverseid: u64,
+    pub type_field: Option<String>,
+    pub flavor: Option<String>,
+    pub image_url: Option<String>,
+    pub language: String,
+    pub multiverseid: Option<i64>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct Legalities{
-    format: String,
-    legality: String,
+    pub format: String,
+    pub legality: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -33,18 +35,19 @@ pub struct Legalities{
 pub struct Card {
     pub name: String,
     pub layout: String,
-    pub cmc: u8,
-    pub colors: HashSet<String>,
-    pub color_identity: HashSet<String>,
+    pub cmc: f64,
+    pub colors: Option<HashSet<String>>,
+    pub color_identity: Option<HashSet<String>>,
     #[serde(rename = "type")]
     pub type_field: String,
-    pub supertypes: HashSet<String>,
+    pub supertypes: Option<HashSet<String>>,
     pub types: HashSet<String>,
-    pub subtypes: HashSet<String>,
+    pub subtypes: Option<HashSet<String>>,
     pub rarity: String,
     #[serde(rename = "set")]
     pub set_field: String,
     pub set_name: String,
+    #[serde(default)]
     pub text: String,
     // pub flavor: Option<String>,
     pub artist: String,
@@ -54,19 +57,21 @@ pub struct Card {
     pub loyalty: Option<String>,
     // pub language: String,
     pub id: String,
-    pub multiverseid: String,
+    pub multiverseid: Option<String>,
     pub names: Option<HashSet<String>>,
-    pub mana_cost: String,
+    pub mana_cost: Option<String>,
     pub variations: Option<Vec<String>>,
-    pub image_url: String,
-    pub watermark: String,
+    pub image_url: Option<String>,
+    pub watermark: Option<String>,
     pub border: Option<String>,
     pub release_date: Option<String>,
-    pub rulings: Vec<Rulings>,
-    pub foregin_names: Vec<ForeignNames>,
+    pub rulings: Option<Vec<Rulings>>,
+    #[serde(default)]
+    pub foreign_names: Vec<ForeignNames>,
     pub printings: HashSet<String>,
-    pub original_text: String,
-    pub original_type: String,
+    pub original_text: Option<String>,
+    pub original_type: Option<String>,
+    #[serde(default)]
     pub legalities: Vec<Legalities>,
 }
 
@@ -94,69 +99,160 @@ pub async fn all() -> Result<Vec<Card>, StatusCode>{
     }
 }
 
-// pub async fn find(id: &str) -> Result<Set, StatusCode>{
-//     let cards: ResultFind = query_builder::find("cards", id).await;
+pub async fn find(id: u64) -> Result<Card, StatusCode>{
+    let text_id = id.to_string();
+    let cards: ResultFind = query_builder::find("cards", &text_id).await;
 
-//     match cards {
-//         Ok(t) => Ok(t.set),
-//         Err(e) => Err(e),
-//     }
-// }
+    match cards {
+        Ok(t) => Ok(t.card),
+        Err(e) => Err(e),
+    }
+}
 
-// pub struct Where<'a> {
-//     name: &'a str,
-//     page: u64,
-//     page_size: u64,
-// }
+// If more than one parameter is used, it has to be passed in the same field separated by | (pipe)
+// E.g.: name = "nissa, worldwaker|jace|ajani, caller"
+pub struct Where<'a>{
+    query: Vec<(&'a str,&'a str)>,
+}
 
-// impl<'a> Where<'a> {
-//     pub fn name(mut self, input: &'a str) -> Self {
-//         self.name = input;
-//         self
-//     }
+pub fn filter<'a>() -> Where<'a>{
+    Where {
+        query: Vec::new(),
+    }
+}
 
-//     pub fn page(mut self, input: u64) -> Self {
-//         self.page = input;
-//         self
-//     }
+impl<'a> Where<'a> {
+    pub fn name(mut self, input: &'a str) -> Self {
+        self.query.push(("name", input));
+        self
+    }
+    pub fn layout(mut self, input: &'a str) -> Self {
+        self.query.push(("layout", input));
+        self
+    }
+    pub fn cmc(mut self, input: &'a str) -> Self {
+        self.query.push(("cmc", input));
+        self
+    }
+    pub fn colors(mut self, input: &'a str) -> Self {
+        self.query.push(("colors", input));
+        self
+    }
+    pub fn color_identity(mut self, input: &'a str) -> Self {
+        self.query.push(("colorIdentity", input));
+        self
+    }
+    pub fn type_field(mut self, input: &'a str) -> Self {
+        self.query.push(("type", input));
+        self
+    }
+    pub fn supertypes(mut self, input: &'a str) -> Self {
+        self.query.push(("supertypes", input));
+        self
+    }
+    pub fn types(mut self, input: &'a str) -> Self {
+        self.query.push(("types", input));
+        self
+    }
+    pub fn subtypes(mut self, input: &'a str) -> Self {
+        self.query.push(("subtypes", input));
+        self
+    }
+    pub fn rarity(mut self, input: &'a str) -> Self {
+        self.query.push(("rarity", input));
+        self
+    }
+    pub fn set_field(mut self, input: &'a str) -> Self {
+        self.query.push(("set", input));
+        self
+    }
+    pub fn set_name(mut self, input: &'a str) -> Self {
+        self.query.push(("setName", input));
+        self
+    }
+    pub fn text(mut self, input: &'a str) -> Self {
+        self.query.push(("text", input));
+        self
+    }
+    pub fn flavor(mut self, input: &'a str) -> Self {
+        self.query.push(("flavor", input));
+        self
+    }
+    pub fn artist(mut self, input: &'a str) -> Self {
+        self.query.push(("artist", input));
+        self
+    }
+    pub fn number(mut self, input: &'a str) -> Self {
+        self.query.push(("number", input));
+        self
+    }
+    pub fn power(mut self, input: &'a str) -> Self {
+        self.query.push(("power", input));
+        self
+    }
+    pub fn toughness(mut self, input: &'a str) -> Self {
+        self.query.push(("toughness", input));
+        self
+    }
+    pub fn loyalty(mut self, input: &'a str) -> Self {
+        self.query.push(("loyalty", input));
+        self
+    }
+    pub fn language(mut self, input: &'a str) -> Self {
+        self.query.push(("language", input));
+        self
+    }
+    pub fn game_format(mut self, input: &'a str) -> Self {
+        self.query.push(("gameFormat", input));
+        self
+    }
+    pub fn legality(mut self, input: &'a str) -> Self {
+        self.query.push(("legality", input));
+        self
+    }
+    pub fn page(mut self, input: &'a str) -> Self {
+        self.query.push(("page", input));
+        self
+    }
+    pub fn page_size(mut self, input: &'a str) -> Self {
+        self.query.push(("pageSize", input));
+        self
+    }
+    pub fn order_by(mut self, input: &'a str) -> Self {
+        self.query.push(("orderBy", input));
+        self
+    }
+    pub fn random(mut self, input: &'a str) -> Self {
+        self.query.push(("random", input));
+        self
+    }
+    pub fn contains(mut self, input: &'a str) -> Self {
+        self.query.push(("contains", input));
+        self
+    }
+    pub fn id(mut self, input: &'a str) -> Self {
+        self.query.push(("id", input));
+        self
+    }
+    pub fn multiverseid(mut self, input: &'a str) -> Self {
+        self.query.push(("multiverseid", input));
+        self
+    }
+   
+    pub async fn all(mut self) -> Result<Vec<Card>, StatusCode>{
+        let val = self.query.remove(0);
+        let mut filter = format!("?{}={}",val.0,val.1);
+        
+        for (k,v) in self.query.into_iter(){
+            filter = format!("{}&{}={}",filter,k,v);
+        }
 
-//     pub fn page_size(mut self, input: u64) -> Self {
-//         self.page_size = input;
-//         self
-//     }
-
-//     pub async fn all(self) -> Result<Vec<Set>, StatusCode>{
-//         let mut filter = String::from("?");
-//         let mut and = "";
-
-//         if self.name.len() > 0 {
-//             filter = format!("{}{}{}", filter, "name=", self.name);
-//             and = "&";
-//         };
-
-//         if self.page > 0 {
-//             filter = format!("{}{}{}{}", filter, and, "page=", self.page);
-//             and = "&";
-//         };
-
-//         if self.page_size > 0 {
-//             filter = format!("{}{}{}{}", filter, and, "pageSize=", self.page_size);
-//         };
-
-//         let sets: ResultAll = query_builder::filter("sets", &filter).await;
+        let cards: ResultAll = query_builder::filter("cards", &filter).await;
     
-//         match sets {
-//             Ok(t) => Ok(t.sets),
-//             Err(e) => Err(e),
-//         }
+        match cards {
+            Ok(t) => Ok(t.cards),
+            Err(e) => Err(e),
+        }
 
-//     }
-// }
-
-// pub fn filter<'a>() -> Where<'a> {
-//     Where {
-//         name: "",
-//         page: 0,
-//         page_size: 0,        
-//     }
-// }
+    }
+}

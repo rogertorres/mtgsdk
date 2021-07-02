@@ -63,45 +63,39 @@ pub async fn find(id: &str) -> Result<Set, StatusCode>{
     }
 }
 
-pub struct Where<'a> {
-    name: &'a str,
-    page: u64,
-    page_size: u64,
+pub struct Where<'a>{
+    query: Vec<(&'a str,String)>,
+}
+
+pub fn filter<'a>() -> Where<'a>{
+    Where {
+        query: Vec::new(),
+    }
 }
 
 impl<'a> Where<'a> {
     pub fn name(mut self, input: &'a str) -> Self {
-        self.name = input;
+        self.query.push(("name", String::from(input)));
         self
     }
 
     pub fn page(mut self, input: u64) -> Self {
-        self.page = input;
+        self.query.push(("page", input.to_string()));
         self
     }
 
     pub fn page_size(mut self, input: u64) -> Self {
-        self.page_size = input;
+        self.query.push(("pageSize", input.to_string()));
         self
     }
 
-    pub async fn all(self) -> Result<Vec<Set>, StatusCode>{
-        let mut filter = String::from("?");
-        let mut and = "";
-
-        if self.name.len() > 0 {
-            filter = format!("{}{}{}", filter, "name=", self.name);
-            and = "&";
-        };
-
-        if self.page > 0 {
-            filter = format!("{}{}{}{}", filter, and, "page=", self.page);
-            and = "&";
-        };
-
-        if self.page_size > 0 {
-            filter = format!("{}{}{}{}", filter, and, "pageSize=", self.page_size);
-        };
+    pub async fn all(mut self) -> Result<Vec<Set>, StatusCode>{
+        let val = self.query.remove(0);
+        let mut filter = format!("?{}={}",val.0,val.1);
+        
+        for (k,v) in self.query.into_iter(){
+            filter = format!("{}&{}={}",filter,k,v);
+        }
 
         let sets: ResultAll = query_builder::filter("sets", &filter).await;
     
@@ -109,14 +103,5 @@ impl<'a> Where<'a> {
             Ok(t) => Ok(t.sets),
             Err(e) => Err(e),
         }
-
-    }
-}
-
-pub fn filter<'a>() -> Where<'a> {
-    Where {
-        name: "",
-        page: 0,
-        page_size: 0,        
     }
 }
