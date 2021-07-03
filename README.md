@@ -1,0 +1,1 @@
+Rust wrapper for "Magic: The Gathering API" (https://docs.magicthegathering.io/).
