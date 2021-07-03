@@ -1,15 +1,20 @@
+//! Get game cards (e.g.: "Kokusho, the Evening Star", "Island", "Black Lotus").
+//! 
+//! Alongside `sets`, `cards' is one of the calls that allow the `find()` method as well as specific filters.
+//! For a complete list of the paremeters available for the filters, check https://docs.magicthegathering.io/#api_v1cards_list.
 #![allow(dead_code)]
 use reqwest::StatusCode;
 use serde::{Serialize,Deserialize};
 use std::collections::HashSet;
-use crate::mtgsdk::query_builder;
+use crate::query_builder;
 
+/// Structure to deserialize rulings inside the cards' JSON. 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct Rulings{
-    date: String,
-    text: String,
+    pub date: String,
+    pub text: String,
 }
-
+/// Structure to deserialize legalities inside the cards' JSON. 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ForeignNames{
@@ -24,6 +29,7 @@ pub struct ForeignNames{
     pub multiverseid: Option<i64>,
 }
 
+/// Structure to deserialize legalities inside the cards' JSON. 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct Legalities{
     pub format: String,
@@ -32,6 +38,10 @@ pub struct Legalities{
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+
+/// Structure to deserialize cards' JSON. 
+///
+/// Values inside `Option` are optional, and you should check if there is `Some` or `None` before using it.
 pub struct Card {
     pub name: String,
     pub layout: String,
@@ -75,23 +85,38 @@ pub struct Card {
     pub legalities: Vec<Legalities>,
 }
 
-
+#[doc(hidden)]
 #[derive(Clone, Debug, Deserialize)]
 pub struct RootAll {
     cards: Vec<Card>,
 }
 
+#[doc(hidden)]
 #[derive(Clone, Debug, Deserialize)]
 pub struct RootFind {
     card: Card,
 }
 
-pub type ResultAll = Result<RootAll, StatusCode>;
-
-pub type ResultFind = Result<RootFind, StatusCode>;
-
+/// Function to get all cards. 
+/// 
+/// The call will return a maximum of 100 cards. To get more, it is necessary to use the `page` filter.
+/// 
+/// To use filters (either pagination or other queries, see `filter()`).
+///
+/// # Example
+/// ```rust
+/// use mtgsdk::cards;
+/// async { 
+///    let cards = cards::all().await;
+///    assert_eq!(cards.unwrap().get(0).unwrap().name.chars().collect::<Vec<char>>()[0], 'A');
+/// };
+///```
+///
+/// # Errors
+/// If the call fails, it will return a `Err(StatusCode)`. 
+/// To see the possible return values, check https://docs.magicthegathering.io/#documentationerrors.
 pub async fn all() -> Result<Vec<Card>, StatusCode>{
-    let cards: ResultAll = query_builder::all("cards").await;
+    let cards: Result<RootAll, StatusCode> = query_builder::all("cards").await;
 
     match cards {
         Ok(t) => Ok(t.cards),
@@ -99,9 +124,23 @@ pub async fn all() -> Result<Vec<Card>, StatusCode>{
     }
 }
 
+/// Function to get a single card.
+///
+/// # Example
+/// ```rust
+/// use mtgsdk::cards;
+/// async { 
+///    let cards = cards::find(386616).await;
+///    assert_eq!(cards.unwrap().name, "Narset, Enlightened Master");
+/// };
+///```
+///
+/// # Errors
+/// If the call fails, it will return a `Err(StatusCode)`. 
+/// To see the possible return values, check https://docs.magicthegathering.io/#documentationerrors.
 pub async fn find(id: u64) -> Result<Card, StatusCode>{
     let text_id = id.to_string();
-    let cards: ResultFind = query_builder::find("cards", &text_id).await;
+    let cards: Result<RootFind, StatusCode> = query_builder::find("cards", &text_id).await;
 
     match cards {
         Ok(t) => Ok(t.card),
@@ -109,12 +148,47 @@ pub async fn find(id: u64) -> Result<Card, StatusCode>{
     }
 }
 
-// If more than one parameter is used, it has to be passed in the same field separated by | (pipe)
-// E.g.: name = "nissa, worldwaker|jace|ajani, caller"
+#[doc(hidden)]
 pub struct Where<'a>{
     query: Vec<(&'a str,&'a str)>,
 }
 
+/// Function to get all card matching the query filters.
+///
+/// To use it, call `filter()` followed by the desired filters and then close with `all()`.
+/// All parameters passed in the filters are `&str`.
+///
+/// # Example
+/// This call will get 25 cards from page 50.
+/// ```rust
+/// use mtgsdk::cards;
+/// async { 
+///     let cards = cards::filter()
+///         .page("50")
+///         .page_size("25")
+///         .all()
+///         .await;
+///     assert_eq!(cards.unwrap().len(), 25);
+/// };
+///```
+///
+/// To query, you may stack multiple filters.
+/// ```rust
+/// use mtgsdk::cards;
+/// async { 
+///     let cards = cards::filter()
+///         .supertypes("legendary")
+///         .types("creature")
+///         .colors("red,white")
+///         .all()
+///         .await;
+///     assert!(cards.unwrap().iter().any(|card| card.name == "Breya, Etherium Shaper"));
+/// };
+///```
+/// 
+/// # Errors
+/// If the call fails, it will return a `Err(StatusCode)`. 
+/// To see the possible return values, check https://docs.magicthegathering.io/#documentationerrors.
 pub fn filter<'a>() -> Where<'a>{
     Where {
         query: Vec::new(),
@@ -238,7 +312,7 @@ impl<'a> Where<'a> {
         self.query.push(("multiverseid", input));
         self
     }
-   
+
     pub async fn all(mut self) -> Result<Vec<Card>, StatusCode>{
         let val = self.query.remove(0);
         let mut filter = format!("?{}={}",val.0,val.1);
@@ -247,7 +321,7 @@ impl<'a> Where<'a> {
             filter = format!("{}&{}={}",filter,k,v);
         }
 
-        let cards: ResultAll = query_builder::filter("cards", &filter).await;
+        let cards: Result<RootAll, StatusCode> = query_builder::filter("cards", &filter).await;
     
         match cards {
             Ok(t) => Ok(t.cards),

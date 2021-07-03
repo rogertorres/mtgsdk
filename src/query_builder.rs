@@ -1,3 +1,15 @@
+//! Internal query builder
+//! 
+//! This module is public and therefore available for two reasons:
+//! - So you can access possible (although improbable) new calls before this wrapper gets updated
+//! - To test wrong calls, e.g.:
+//! ```rust
+//! #[tokio::test]
+//! async fn error_404_not_found(){
+//!     let not: Result<formats::RootAll, StatusCode> = query_builder::all("forcenotfound").await;
+//!     assert_eq!(not.unwrap_err(),StatusCode::NOT_FOUND);
+//! }
+//! ```
 use reqwest::StatusCode;
 use serde::de::DeserializeOwned;
 
@@ -57,4 +69,16 @@ pub async fn filter<T>(call: &str, params: &str) -> Result<T, StatusCode>
 where T: DeserializeOwned {
     let url = format!("{}/{}/{}/{}", API_URL, API_VER, call, params);
     build(url).await
+}
+
+#[cfg(test)]
+mod tests {
+    use reqwest::StatusCode;
+    use crate::{formats,query_builder};
+    
+    #[tokio::test]
+    async fn error_404_not_found(){
+        let not: Result<formats::RootAll, StatusCode> = query_builder::all("forcenotfound").await;
+        assert_eq!(not.unwrap_err(),StatusCode::NOT_FOUND);
+    }
 }

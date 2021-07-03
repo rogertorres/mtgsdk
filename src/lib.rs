@@ -1,43 +1,53 @@
-mod mtgsdk;
+//! The `mtgsdk` crate provides a Rust wrapper (SDK) for the "Magic: The Gathering API".
+//! 
+//! It handles the calls to all the API endpoints through the use of 3 main functions: `all()`, `find()` and `filter()`.
+//! - `all()` to get the unfiltered information through pagination;
+//! - `find()` to return a specific information by id;
+//! - `filter()` to filter the `all()` call.
+//!
+//! # Using the `all()` function
+//! Returns the all the information available through a specific endpoint.
+//! 
+//! # Example
+//! Check the **Modules** below for examples of each function's usage.
+mod query_builder;
+pub mod cards;
+pub mod formats;
+pub mod sets;
+pub mod subtypes;
+pub mod supertypes;
+pub mod types;
 
 #[cfg(test)]
 mod tests {
-    use reqwest::StatusCode;
-    use crate::mtgsdk::*;
-    
-    #[tokio::test]
-    #[ignore]
-    async fn error_404_not_found(){
-        let not: types::ResultAll = query_builder::all("forcenotfound").await;
-        assert_eq!(not.unwrap_err(),StatusCode::NOT_FOUND);
-    }
+    use crate::*;
 
     #[tokio::test]
     #[ignore]
     async fn get_all_formats(){ 
         let fmt = formats::all().await;
-        assert!(fmt.unwrap().remove("Modern"));
+        assert!(fmt.unwrap().contains("Modern"));
     }
 
     #[tokio::test]
     #[ignore]
     async fn get_all_types(){ 
         let typ = types::all().await;
-        assert!(typ.unwrap().remove("Planeswalker"));
+        assert!(typ.unwrap().contains("Planeswalker"));
     }
 
     #[tokio::test]
     #[ignore]
     async fn get_all_subtypes(){ 
         let sub = subtypes::all().await;
-        assert!(sub.unwrap().remove("Eldrazi"));
+        assert!(sub.unwrap().contains("Eldrazi"));
     }
 
     #[tokio::test]
     #[ignore]
     async fn get_all_supertypes(){ 
         let sup = supertypes::all().await;
-        assert!(sup.unwrap().remove("Basic"));
+        assert!(sup.unwrap().contains("Basic"));
     }
 
     #[tokio::test]
@@ -68,8 +78,8 @@ mod tests {
     #[ignore]
     async fn filter_page(){ 
         let sets = sets::filter()
-            .page(2)
-            .page_size(13)
+            .page("2")
+            .page_size("13")
             .all()
             .await;
         assert_eq!(sets.unwrap().len(), 13);
@@ -91,9 +101,8 @@ mod tests {
  
     #[tokio::test]
     #[ignore]
-    async fn find_card_no_mana_cost(){ 
+    async fn test_card_with_no_mana_cost(){ 
         let cards = cards::find(438608).await;
-        println!("{}",cards.clone().unwrap().name);
         assert_eq!(cards.unwrap().name, "Ancestral Vision");
     }
     
@@ -104,7 +113,6 @@ mod tests {
         .name("Karn")
         .all()
         .await;
-        // assert!(cards.unwrap().get(0).unwrap().name.contains("Karn"));
         assert!(cards.unwrap().iter().any(|card| card.name == "Karn Liberated"));
     }
     
