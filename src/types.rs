@@ -24,7 +24,7 @@ pub struct RootAll {
 ///
 /// # Errors
 /// If the call fails, it will return a `Err(StatusCode)`. 
-/// To see the possible return values, check https://docs.magicthegathering.io/#documentationerrors.
+/// To see the possible return values, check the [API docs](https://docs.magicthegathering.io/#documentationerrors).
 pub async fn all() -> Result<HashSet<String>, StatusCode>{
     let types: Result<RootAll, StatusCode> = query_builder::all("types").await;
 

@@ -1,7 +1,7 @@
 //! Get game cards (e.g.: "Kokusho, the Evening Star", "Island", "Black Lotus").
 //! 
 //! Alongside `sets`, `cards' is one of the calls that allow the `find()` method as well as specific filters.
-//! For a complete list of the paremeters available for the filters, check https://docs.magicthegathering.io/#api_v1cards_list.
+//! For a complete list of the paremeters available for the filters, check de [API docs](https://docs.magicthegathering.io/#api_v1cards_list).
 #![allow(dead_code)]
 use reqwest::StatusCode;
 use serde::{Serialize,Deserialize};
@@ -103,6 +103,8 @@ pub struct RootFind {
 /// 
 /// To use filters (either pagination or other queries, see `filter()`).
 ///
+/// For more information on the available filterms, check the [API docs](https://docs.magicthegathering.io/#api_v1sets_list).
+///
 /// # Example
 /// ```rust
 /// use mtgsdk::cards;
@@ -114,7 +116,7 @@ pub struct RootFind {
 ///
 /// # Errors
 /// If the call fails, it will return a `Err(StatusCode)`. 
-/// To see the possible return values, check https://docs.magicthegathering.io/#documentationerrors.
+/// To see the possible return values, check the [API docs](https://docs.magicthegathering.io/#documentationerrors).
 pub async fn all() -> Result<Vec<Card>, StatusCode>{
     let cards: Result<RootAll, StatusCode> = query_builder::all("cards").await;
 
@@ -137,7 +139,7 @@ pub async fn all() -> Result<Vec<Card>, StatusCode>{
 ///
 /// # Errors
 /// If the call fails, it will return a `Err(StatusCode)`. 
-/// To see the possible return values, check https://docs.magicthegathering.io/#documentationerrors.
+/// To see the possible return values, check the [API docs](https://docs.magicthegathering.io/#documentationerrors).
 pub async fn find(id: u64) -> Result<Card, StatusCode>{
     let text_id = id.to_string();
     let cards: Result<RootFind, StatusCode> = query_builder::find("cards", &text_id).await;
@@ -150,13 +152,12 @@ pub async fn find(id: u64) -> Result<Card, StatusCode>{
 
 #[doc(hidden)]
 pub struct Where<'a>{
-    query: Vec<(&'a str,&'a str)>,
+    query: Vec<(&'a str, String)>,
 }
 
 /// Function to get all card matching the query filters.
 ///
 /// To use it, call `filter()` followed by the desired filters and then close with `all()`.
-/// All parameters passed in the filters are `&str`.
 ///
 /// # Example
 /// This call will get 25 cards from page 50.
@@ -164,8 +165,8 @@ pub struct Where<'a>{
 /// use mtgsdk::cards;
 /// async { 
 ///     let cards = cards::filter()
-///         .page("50")
-///         .page_size("25")
+///         .page(50)
+///         .page_size(25)
 ///         .all()
 ///         .await;
 ///     assert_eq!(cards.unwrap().len(), 25);
@@ -188,7 +189,7 @@ pub struct Where<'a>{
 /// 
 /// # Errors
 /// If the call fails, it will return a `Err(StatusCode)`. 
-/// To see the possible return values, check https://docs.magicthegathering.io/#documentationerrors.
+/// To see the possible return values, check the [API docs](https://docs.magicthegathering.io/#documentationerrors).
 pub fn filter<'a>() -> Where<'a>{
     Where {
         query: Vec::new(),
@@ -197,119 +198,119 @@ pub fn filter<'a>() -> Where<'a>{
 
 impl<'a> Where<'a> {
     pub fn name(mut self, input: &'a str) -> Self {
-        self.query.push(("name", input));
+        self.query.push(("name", String::from(input)));
         self
     }
     pub fn layout(mut self, input: &'a str) -> Self {
-        self.query.push(("layout", input));
+        self.query.push(("layout", String::from(input)));
         self
     }
-    pub fn cmc(mut self, input: &'a str) -> Self {
-        self.query.push(("cmc", input));
+    pub fn cmc(mut self, input: u64) -> Self {
+        self.query.push(("cmc", input.to_string()));
         self
     }
     pub fn colors(mut self, input: &'a str) -> Self {
-        self.query.push(("colors", input));
+        self.query.push(("colors", String::from(input)));
         self
     }
     pub fn color_identity(mut self, input: &'a str) -> Self {
-        self.query.push(("colorIdentity", input));
+        self.query.push(("colorIdentity", String::from(input)));
         self
     }
     pub fn type_field(mut self, input: &'a str) -> Self {
-        self.query.push(("type", input));
+        self.query.push(("type", String::from(input)));
         self
     }
     pub fn supertypes(mut self, input: &'a str) -> Self {
-        self.query.push(("supertypes", input));
+        self.query.push(("supertypes", String::from(input)));
         self
     }
     pub fn types(mut self, input: &'a str) -> Self {
-        self.query.push(("types", input));
+        self.query.push(("types", String::from(input)));
         self
     }
     pub fn subtypes(mut self, input: &'a str) -> Self {
-        self.query.push(("subtypes", input));
+        self.query.push(("subtypes", String::from(input)));
         self
     }
     pub fn rarity(mut self, input: &'a str) -> Self {
-        self.query.push(("rarity", input));
+        self.query.push(("rarity", String::from(input)));
         self
     }
     pub fn set_field(mut self, input: &'a str) -> Self {
-        self.query.push(("set", input));
+        self.query.push(("set", String::from(input)));
         self
     }
     pub fn set_name(mut self, input: &'a str) -> Self {
-        self.query.push(("setName", input));
+        self.query.push(("setName", String::from(input)));
         self
     }
     pub fn text(mut self, input: &'a str) -> Self {
-        self.query.push(("text", input));
+        self.query.push(("text", String::from(input)));
         self
     }
     pub fn flavor(mut self, input: &'a str) -> Self {
-        self.query.push(("flavor", input));
+        self.query.push(("flavor", String::from(input)));
         self
     }
     pub fn artist(mut self, input: &'a str) -> Self {
-        self.query.push(("artist", input));
+        self.query.push(("artist", String::from(input)));
         self
     }
     pub fn number(mut self, input: &'a str) -> Self {
-        self.query.push(("number", input));
+        self.query.push(("number", String::from(input)));
         self
     }
     pub fn power(mut self, input: &'a str) -> Self {
-        self.query.push(("power", input));
+        self.query.push(("power", String::from(input)));
         self
     }
     pub fn toughness(mut self, input: &'a str) -> Self {
-        self.query.push(("toughness", input));
+        self.query.push(("toughness", String::from(input)));
         self
     }
     pub fn loyalty(mut self, input: &'a str) -> Self {
-        self.query.push(("loyalty", input));
+        self.query.push(("loyalty", String::from(input)));
         self
     }
     pub fn language(mut self, input: &'a str) -> Self {
-        self.query.push(("language", input));
+        self.query.push(("language", String::from(input)));
         self
     }
     pub fn game_format(mut self, input: &'a str) -> Self {
-        self.query.push(("gameFormat", input));
+        self.query.push(("gameFormat", String::from(input)));
         self
     }
     pub fn legality(mut self, input: &'a str) -> Self {
-        self.query.push(("legality", input));
+        self.query.push(("legality", String::from(input)));
         self
     }
-    pub fn page(mut self, input: &'a str) -> Self {
-        self.query.push(("page", input));
+    pub fn page(mut self, input: u64) -> Self {
+        self.query.push(("page", input.to_string()));
         self
     }
-    pub fn page_size(mut self, input: &'a str) -> Self {
-        self.query.push(("pageSize", input));
+    pub fn page_size(mut self, input: u64) -> Self {
+        self.query.push(("pageSize", input.to_string()));
         self
     }
     pub fn order_by(mut self, input: &'a str) -> Self {
-        self.query.push(("orderBy", input));
+        self.query.push(("orderBy", String::from(input)));
         self
     }
     pub fn random(mut self, input: &'a str) -> Self {
-        self.query.push(("random", input));
+        self.query.push(("random", String::from(input)));
         self
     }
     pub fn contains(mut self, input: &'a str) -> Self {
-        self.query.push(("contains", input));
+        self.query.push(("contains", String::from(input)));
         self
     }
     pub fn id(mut self, input: &'a str) -> Self {
-        self.query.push(("id", input));
+        self.query.push(("id", String::from(input)));
         self
     }
-    pub fn multiverseid(mut self, input: &'a str) -> Self {
-        self.query.push(("multiverseid", input));
+    pub fn multiverseid(mut self, input: u64) -> Self {
+        self.query.push(("multiverseid", input.to_string()));
         self
     }
 

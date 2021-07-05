@@ -1,7 +1,7 @@
 //! Get game sets (e.g.: Urza's Saga, Darksteel, Dragons of Tarkir).
 //! 
 //! Alongside `cards`, `sets` is one of the calls that allow the `find()` method as well as specific filters.
-//! For a complete list of the paremeters available for the filters, check https://docs.magicthegathering.io/#api_v1sets_list.
+//! For a complete list of the paremeters available for the filters, check [API docs](https://docs.magicthegathering.io/#api_v1sets_list).
 #![allow(dead_code)]
 use reqwest::StatusCode;
 use serde::{Serialize,Deserialize};
@@ -66,7 +66,7 @@ pub struct RootFind {
 ///
 /// # Errors
 /// If the call fails, it will return a `Err(StatusCode)`. 
-/// To see the possible return values, check https://docs.magicthegathering.io/#documentationerrors.
+/// To see the possible return values, check the [API docs](https://docs.magicthegathering.io/#documentationerrors).
 pub async fn all() -> Result<Vec<Set>, StatusCode>{
     let sets: Result<RootAll, StatusCode> = query_builder::all("sets").await;
 
@@ -89,7 +89,7 @@ pub async fn all() -> Result<Vec<Set>, StatusCode>{
 ///
 /// # Errors
 /// If the call fails, it will return a `Err(StatusCode)`. 
-/// To see the possible return values, check https://docs.magicthegathering.io/#documentationerrors.
+/// To see the possible return values, check the [API docs](https://docs.magicthegathering.io/#documentationerrors).
 pub async fn find(id: &str) -> Result<Set, StatusCode>{
     let sets: Result<RootFind, StatusCode> = query_builder::find("sets", id).await;
 
@@ -107,7 +107,8 @@ pub struct Where<'a>{
 /// Function to get all card matching the query filters.
 ///
 /// To use it, call `filter()` followed by the desired filters and then close with `all()`.
-/// All parameters passed in the filters are `&str`.
+///
+/// For more information on the available filterms, check the [API docs](https://docs.magicthegathering.io/#api_v1sets_list).
 ///
 /// # Example
 /// This call will get 13 sets from page 2.
@@ -115,21 +116,21 @@ pub struct Where<'a>{
 /// use mtgsdk::sets;
 /// async { 
 ///    let sets = sets::filter()
-///       .page("2")
-///       .page_size("13")
+///       .page(2)
+///       .page_size(13)
 ///       .all()
 ///       .await;
 ///    assert_eq!(sets.unwrap().len(), 13);
 /// };
 ///```
 ///
-/// To query, you may stack multiple filters.
+/// To query, you may stack filters.
 /// ```rust
 /// use mtgsdk::sets;
 /// async { 
 ///    let sets = sets::filter()
-///       .type_field("expansion")
-///       .name("kamigawa")
+///       .block("kamigawa")
+///       .name("bet")
 ///       .all()
 ///       .await;
 ///    assert!(sets.unwrap().iter().any(|set| set.name == "Betrayers of Kamigawa"));
@@ -151,12 +152,17 @@ impl<'a> Where<'a> {
         self
     }
 
-    pub fn page(mut self, input: &'a str) -> Self {
+    pub fn block(mut self, input: &'a str) -> Self {
+        self.query.push(("block", String::from(input)));
+        self
+    }
+
+    pub fn page(mut self, input: u64) -> Self {
         self.query.push(("page", input.to_string()));
         self
     }
 
-    pub fn page_size(mut self, input: &'a str) -> Self {
+    pub fn page_size(mut self, input: u64) -> Self {
         self.query.push(("pageSize", input.to_string()));
         self
     }
