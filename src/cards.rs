@@ -1,23 +1,23 @@
 //! Get game cards (e.g.: "Kokusho, the Evening Star", "Island", "Black Lotus").
-//! 
+//!
 //! Alongside `sets`, `cards' is one of the calls that allow the `find()` method as well as specific filters.
 //! For a complete list of the paremeters available for the filters, check de [API docs](https://docs.magicthegathering.io/#api_v1cards_list).
 #![allow(dead_code)]
-use reqwest::StatusCode;
-use serde::{Serialize,Deserialize};
-use std::collections::HashSet;
 use crate::query_builder;
+use reqwest::StatusCode;
+use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 
-/// Structure to deserialize rulings inside the cards' JSON. 
+/// Structure to deserialize rulings inside the cards' JSON.
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
-pub struct Rulings{
+pub struct Rulings {
     pub date: String,
     pub text: String,
 }
-/// Structure to deserialize legalities inside the cards' JSON. 
+/// Structure to deserialize legalities inside the cards' JSON.
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
-pub struct ForeignNames{
+pub struct ForeignNames {
     pub name: String,
     #[serde(default)]
     pub text: String,
@@ -29,9 +29,9 @@ pub struct ForeignNames{
     pub multiverseid: Option<i64>,
 }
 
-/// Structure to deserialize legalities inside the cards' JSON. 
+/// Structure to deserialize legalities inside the cards' JSON.
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
-pub struct Legalities{
+pub struct Legalities {
     pub format: String,
     pub legality: String,
 }
@@ -39,7 +39,7 @@ pub struct Legalities{
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 
-/// Structure to deserialize cards' JSON. 
+/// Structure to deserialize cards' JSON.
 ///
 /// Values inside `Option` are optional, and you should check if there is `Some` or `None` before using it.
 pub struct Card {
@@ -97,10 +97,10 @@ pub struct RootFind {
     card: Card,
 }
 
-/// Function to get all cards. 
-/// 
+/// Function to get all cards.
+///
 /// The call will return a maximum of 100 cards. To get more, it is necessary to use the `page` filter.
-/// 
+///
 /// To use filters (either pagination or other queries, see `filter()`).
 ///
 /// For more information on the available filterms, check the [API docs](https://docs.magicthegathering.io/#api_v1sets_list).
@@ -108,16 +108,16 @@ pub struct RootFind {
 /// # Example
 /// ```rust
 /// use mtgsdk::cards;
-/// async { 
+/// async {
 ///    let cards = cards::all().await;
 ///    assert_eq!(cards.unwrap().get(0).unwrap().name.chars().collect::<Vec<char>>()[0], 'A');
 /// };
 ///```
 ///
 /// # Errors
-/// If the call fails, it will return a `Err(StatusCode)`. 
+/// If the call fails, it will return a `Err(StatusCode)`.
 /// To see the possible return values, check the [API docs](https://docs.magicthegathering.io/#documentationerrors).
-pub async fn all() -> Result<Vec<Card>, StatusCode>{
+pub async fn all() -> Result<Vec<Card>, StatusCode> {
     let cards: Result<RootAll, StatusCode> = query_builder::all("cards").await;
 
     match cards {
@@ -131,16 +131,16 @@ pub async fn all() -> Result<Vec<Card>, StatusCode>{
 /// # Example
 /// ```rust
 /// use mtgsdk::cards;
-/// async { 
+/// async {
 ///    let cards = cards::find(386616).await;
 ///    assert_eq!(cards.unwrap().name, "Narset, Enlightened Master");
 /// };
 ///```
 ///
 /// # Errors
-/// If the call fails, it will return a `Err(StatusCode)`. 
+/// If the call fails, it will return a `Err(StatusCode)`.
 /// To see the possible return values, check the [API docs](https://docs.magicthegathering.io/#documentationerrors).
-pub async fn find(id: u64) -> Result<Card, StatusCode>{
+pub async fn find(id: u64) -> Result<Card, StatusCode> {
     let text_id = id.to_string();
     let cards: Result<RootFind, StatusCode> = query_builder::find("cards", &text_id).await;
 
@@ -151,7 +151,7 @@ pub async fn find(id: u64) -> Result<Card, StatusCode>{
 }
 
 #[doc(hidden)]
-pub struct Where<'a>{
+pub struct Where<'a> {
     query: Vec<(&'a str, String)>,
 }
 
@@ -163,7 +163,7 @@ pub struct Where<'a>{
 /// This call will get 25 cards from page 50.
 /// ```rust
 /// use mtgsdk::cards;
-/// async { 
+/// async {
 ///     let cards = cards::filter()
 ///         .page(50)
 ///         .page_size(25)
@@ -176,7 +176,7 @@ pub struct Where<'a>{
 /// To query, you may stack multiple filters.
 /// ```rust
 /// use mtgsdk::cards;
-/// async { 
+/// async {
 ///     let cards = cards::filter()
 ///         .supertypes("legendary")
 ///         .types("creature")
@@ -186,14 +186,12 @@ pub struct Where<'a>{
 ///     assert!(cards.unwrap().iter().any(|card| card.name == "Breya, Etherium Shaper"));
 /// };
 ///```
-/// 
+///
 /// # Errors
-/// If the call fails, it will return a `Err(StatusCode)`. 
+/// If the call fails, it will return a `Err(StatusCode)`.
 /// To see the possible return values, check the [API docs](https://docs.magicthegathering.io/#documentationerrors).
-pub fn filter<'a>() -> Where<'a>{
-    Where {
-        query: Vec::new(),
-    }
+pub fn filter<'a>() -> Where<'a> {
+    Where { query: Vec::new() }
 }
 
 impl<'a> Where<'a> {
@@ -314,20 +312,19 @@ impl<'a> Where<'a> {
         self
     }
 
-    pub async fn all(mut self) -> Result<Vec<Card>, StatusCode>{
+    pub async fn all(mut self) -> Result<Vec<Card>, StatusCode> {
         let val = self.query.remove(0);
-        let mut filter = format!("?{}={}",val.0,val.1);
-        
-        for (k,v) in self.query.into_iter(){
-            filter = format!("{}&{}={}",filter,k,v);
+        let mut filter = format!("?{}={}", val.0, val.1);
+
+        for (k, v) in self.query.into_iter() {
+            filter = format!("{}&{}={}", filter, k, v);
         }
 
         let cards: Result<RootAll, StatusCode> = query_builder::filter("cards", &filter).await;
-    
+
         match cards {
             Ok(t) => Ok(t.cards),
             Err(e) => Err(e),
         }
-
     }
 }

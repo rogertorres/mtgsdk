@@ -1,13 +1,13 @@
 //! Get game sets (e.g.: Urza's Saga, Darksteel, Dragons of Tarkir).
-//! 
+//!
 //! Alongside `cards`, `sets` is one of the calls that allow the `find()` method as well as specific filters.
 //! For a complete list of the paremeters available for the filters, check [API docs](https://docs.magicthegathering.io/#api_v1sets_list).
 #![allow(dead_code)]
-use reqwest::StatusCode;
-use serde::{Serialize,Deserialize};
 use crate::query_builder;
+use reqwest::StatusCode;
+use serde::{Deserialize, Serialize};
 
-/// Structure to deserialize sets' JSON. 
+/// Structure to deserialize sets' JSON.
 ///
 /// Values inside `Option` are optional, and you should check if there is `Some` or `None` before using it.
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -51,23 +51,23 @@ pub struct RootFind {
     set: Set,
 }
 
-/// Function to get all sets. 
-/// 
+/// Function to get all sets.
+///
 /// To use filters (either pagination or other queries, see `filter()`).
 ///
 /// # Example
 /// ```rust
 /// use mtgsdk::sets;
-/// async { 
+/// async {
 ///    let sets = sets::all().await;
 ///    assert_eq!(sets.unwrap().get(0).unwrap().type_field, "core");
 /// };
 ///```
 ///
 /// # Errors
-/// If the call fails, it will return a `Err(StatusCode)`. 
+/// If the call fails, it will return a `Err(StatusCode)`.
 /// To see the possible return values, check the [API docs](https://docs.magicthegathering.io/#documentationerrors).
-pub async fn all() -> Result<Vec<Set>, StatusCode>{
+pub async fn all() -> Result<Vec<Set>, StatusCode> {
     let sets: Result<RootAll, StatusCode> = query_builder::all("sets").await;
 
     match sets {
@@ -76,21 +76,21 @@ pub async fn all() -> Result<Vec<Set>, StatusCode>{
     }
 }
 
-/// Function to get a single set. 
+/// Function to get a single set.
 ///
 /// # Example
 /// ```rust
 /// use mtgsdk::sets;
-/// async { 
+/// async {
 ///    let sets = sets::find("dom").await;
 ///    assert_eq!(sets.unwrap().name, "Dominaria");
 /// };
 ///```
 ///
 /// # Errors
-/// If the call fails, it will return a `Err(StatusCode)`. 
+/// If the call fails, it will return a `Err(StatusCode)`.
 /// To see the possible return values, check the [API docs](https://docs.magicthegathering.io/#documentationerrors).
-pub async fn find(id: &str) -> Result<Set, StatusCode>{
+pub async fn find(id: &str) -> Result<Set, StatusCode> {
     let sets: Result<RootFind, StatusCode> = query_builder::find("sets", id).await;
 
     match sets {
@@ -100,8 +100,8 @@ pub async fn find(id: &str) -> Result<Set, StatusCode>{
 }
 
 #[doc(hidden)]
-pub struct Where<'a>{
-    query: Vec<(&'a str,String)>,
+pub struct Where<'a> {
+    query: Vec<(&'a str, String)>,
 }
 
 /// Function to get all card matching the query filters.
@@ -114,7 +114,7 @@ pub struct Where<'a>{
 /// This call will get 13 sets from page 2.
 /// ```rust
 /// use mtgsdk::sets;
-/// async { 
+/// async {
 ///    let sets = sets::filter()
 ///       .page(2)
 ///       .page_size(13)
@@ -127,7 +127,7 @@ pub struct Where<'a>{
 /// To query, you may stack filters.
 /// ```rust
 /// use mtgsdk::sets;
-/// async { 
+/// async {
 ///    let sets = sets::filter()
 ///       .block("kamigawa")
 ///       .name("bet")
@@ -138,12 +138,10 @@ pub struct Where<'a>{
 ///```
 ///
 /// # Errors
-/// If the call fails, it will return a `Err(StatusCode)`. 
+/// If the call fails, it will return a `Err(StatusCode)`.
 /// To see the possible return values, check https://docs.magicthegathering.io/#documentationerrors.
-pub fn filter<'a>() -> Where<'a>{
-    Where {
-        query: Vec::new(),
-    }
+pub fn filter<'a>() -> Where<'a> {
+    Where { query: Vec::new() }
 }
 
 impl<'a> Where<'a> {
@@ -167,16 +165,16 @@ impl<'a> Where<'a> {
         self
     }
 
-    pub async fn all(mut self) -> Result<Vec<Set>, StatusCode>{
+    pub async fn all(mut self) -> Result<Vec<Set>, StatusCode> {
         let val = self.query.remove(0);
-        let mut filter = format!("?{}={}",val.0,val.1);
-        
-        for (k,v) in self.query.into_iter(){
-            filter = format!("{}&{}={}",filter,k,v);
+        let mut filter = format!("?{}={}", val.0, val.1);
+
+        for (k, v) in self.query.into_iter() {
+            filter = format!("{}&{}={}", filter, k, v);
         }
 
         let sets: Result<RootAll, StatusCode> = query_builder::filter("sets", &filter).await;
-    
+
         match sets {
             Ok(t) => Ok(t.sets),
             Err(e) => Err(e),
